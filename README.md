@@ -127,5 +127,5 @@ This project enables farmers and agriculture professionals to detect crop diseas
 
 ## 📂 Dataset
 
-- [Google Dataset Search – Plant Diseases](https://datasetsearch.research.google.com/search?query=plant-diseasesdataset&docid=ouHePAWoVIMq2IHEAAAAAA%3D%3D)
+- [Google Dataset Search – Plant Diseases](https://www.kaggle.com/datasets/abdallahalidev/plantvillage-dataset)
 
