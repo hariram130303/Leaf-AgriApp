@@ -1,77 +1,108 @@
-#app.py
-from __future__ import division, print_function
-import sys
-import os
-import glob
-import re
+# app.py
+
+import streamlit as st
 import numpy as np
-
-# Keras
+from PIL import Image
 from keras.models import load_model
-from keras.preprocessing import image
+from keras.preprocessing import image as keras_image
 
-# Flask utils
-from flask import Flask, redirect, url_for, request, render_template
-from werkzeug.utils import secure_filename
-from gevent.pywsgi import WSGIServer
+# Set page config
+st.set_page_config(page_title="Plant Disease Classifier", layout="centered")
 
-# Define a flask app
-app = Flask(__name__)
+# Load model once and cache it
+@st.cache_resource
+def load_keras_model():
+    model = load_model("Model.h5")
+    model.make_predict_function()
+    return model
 
-MODEL_PATH = 'Model.h5'
+model = load_keras_model()
 
-# Load your trained model
-print(" ** Model Loading **")
-model = load_model(MODEL_PATH)
-print(" ** Model Loaded **")
-model.make_predict_function()
-
-
-
-def model_predict(img_path, model):
-    img = image.load_img(img_path, target_size=(224, 224))
-
-    # Preprocessing the image
-    x = image.img_to_array(img)
-    x = np.expand_dims(x, axis=0)
-
-    x = x/255
-
-    preds = model.predict(x)
-    d = preds.flatten()
-    j = d.max()
-    li=['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy', 'Blueberry___healthy', 'Cherry_(including_sour)___Powdery_mildew', 'Cherry_(including_sour)___healthy', 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 'Corn_(maize)___Common_rust_', 'Corn_(maize)___Northern_Leaf_Blight', 'Corn_(maize)___healthy', 'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 'Grape___healthy', 'Orange___Haunglongbing_(Citrus_greening)', 'Peach___Bacterial_spot', 'Peach___healthy', 'Pepper,_bell___Bacterial_spot', 'Pepper,_bell___healthy', 'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy', 'Raspberry___healthy', 'Soybean___healthy', 'Squash___Powdery_mildew', 'Strawberry___Leaf_scorch', 'Strawberry___healthy', 'Tomato___Bacterial_spot', 'Tomato___Early_blight', 'Tomato___Late_blight', 'Tomato___Leaf_Mold', 'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy']
-    for index,item in enumerate(d):
-        if item == j:
-            class_name = li[index].split('___')
-    return class_name
+# Class labels
+CLASS_LABELS = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy', 
+'Blueberry___healthy', 'Cherry_(including_sour)___Powdery_mildew', 'Cherry_(including_sour)___healthy', 
+'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 'Corn_(maize)___Common_rust_', 'Corn_(maize)___Northern_Leaf_Blight', 
+'Corn_(maize)___healthy', 'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 
+'Grape___healthy', 'Orange___Haunglongbing_(Citrus_greening)', 'Peach___Bacterial_spot', 'Peach___healthy', 
+'Pepper,_bell___Bacterial_spot', 'Pepper,_bell___healthy', 'Potato___Early_blight', 'Potato___Late_blight', 
+'Potato___healthy', 'Raspberry___healthy', 'Soybean___healthy', 'Squash___Powdery_mildew', 'Strawberry___Leaf_scorch', 
+'Strawberry___healthy', 'Tomato___Bacterial_spot', 'Tomato___Early_blight', 'Tomato___Late_blight', 'Tomato___Leaf_Mold', 
+'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 'Tomato___Target_Spot', 
+'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus', 'Tomato___healthy']
 
 
-@app.route('/')
-def index():
-    # Main page
-    return render_template('index.html')
+def predict_class(img, model):
+    img = img.resize((224, 224))
+    img_array = keras_image.img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = img_array / 255.0
 
+    preds = model.predict(img_array)[0]
+    class_index = np.argmax(preds)
+    label = CLASS_LABELS[class_index]
+    crop, disease = label.split('___')
+    return crop, disease.replace('_', ' ').title(), preds[class_index]
 
-@app.route('/predict', methods=['GET', 'POST'])
-def upload():
-    if request.method == 'POST':
-        # Get the file from post request
-        f = request.files['file']
+# Sidebar navigation
+st.sidebar.title("Navigation")
+app_mode = st.sidebar.radio("Go to", ["Home", "Model Info", "About Project", "Contact"])
 
-        # Save the file to ./uploads
-        basepath = os.path.dirname(__file__)
-        file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
-        f.save(file_path)
+# --------------------- Home Page ---------------------
+if app_mode == "Home":
+    st.title("🌿 Plant Disease Classifier")
+    st.markdown("Upload a leaf image to detect the crop and disease.")
 
-        # Make prediction
-        class_name = model_predict(file_path, model)
+    uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-        result = str(f"Predicted Crop:{class_name[0]}  Predicted Disease:{class_name[1].title().replace('_',' ')}")               
-        return result
-    return None
+    if uploaded_file is not None:
+        image_data = Image.open(uploaded_file)
+        st.image(image_data, caption="Uploaded Leaf Image", use_column_width=True)
 
+        with st.spinner("Predicting..."):
+            crop, disease, confidence = predict_class(image_data, model)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        st.success(f"🌾 **Crop:** {crop}")
+        st.error(f"🦠 **Disease:** {disease}")
+        st.info(f"📊 **Confidence:** {confidence * 100:.2f}%")
+
+# --------------------- Model Info Page ---------------------
+elif app_mode == "Model Info":
+    st.title("📊 Model Information")
+    st.markdown("""
+    - **Architecture:** Custom CNN inspired by AlexNet  
+    - **Input Size:** 224 x 224 x 3  
+    - **Framework:** Keras (TensorFlow backend)  
+    - **Optimizer:** Adam  
+    - **Loss Function:** Sparse Categorical Crossentropy  
+    - **Output:** 38 Plant Disease Classes
+    """)
+
+    if st.button("Show Model Summary in Terminal"):
+        model.summary(print_fn=st.write)
+
+# --------------------- About Project Page ---------------------
+elif app_mode == "About Project":
+    st.title("📘 About This Project")
+    st.markdown("""
+    This AI-powered web application detects plant diseases from leaf images.  
+    It supports 38 classes from various crops including:
+    
+    - **Apple**, **Corn**, **Tomato**, **Grape**, **Potato**, **Pepper**, etc.  
+    - Diseases include **blight**, **rot**, **mold**, **rust**, and more.
+    
+    **Key Goals:**
+    - Early disease detection for farmers
+    - Reduced crop loss
+    - Accessible diagnosis via web/mobile
+    """)
+
+# --------------------- Contact Page ---------------------
+elif app_mode == "Contact":
+    st.title("📬 Contact Developer")
+    st.markdown("""
+    - **Name:** Hari Ram  
+    - 📧 Email: tmhariram@gmail.com  
+    - 💼 [LinkedIn](https://linkedin.com/in/hari-ram-thogata-madam)  
+    - 💻 [GitHub](https://github.com/hariram130303)  
+    """)
+
