@@ -126,10 +126,6 @@ This project enables farmers and agriculture professionals to detect crop diseas
 ---
 
 ## 📂 Dataset
-
-<<<<<<< HEAD
 - [Google Dataset Search – Plant Diseases](https://www.kaggle.com/datasets/abdallahalidev/plantvillage-dataset)
 
-=======
-- [Google Dataset Search – Plant Diseases](https://datasetsearch.research.google.com/search?query=plant-diseasesdataset&docid=ouHePAWoVIMq2IHEAAAAAA%3D%3D)
->>>>>>> b322037 (Crop disease Predictor)
+
