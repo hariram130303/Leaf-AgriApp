@@ -1,6 +1,6 @@
 # Leaf-AgriApp – Crop Disease Detection
 
-> **Live App**: [Deployed on Heroku](https://leaf-agriapp-luwsgl4zfrw3fv6wujurgz.streamlit.app/)
+> **Live App**: [Deployed on Streamlit](https://leaf-agriapp-luwsgl4zfrw3fv6wujurgz.streamlit.app/)
 
 A web application that uses deep learning to classify and detect diseases in crop leaves. Built using CNN and Flask, and trained on a dataset of 15 crops with 38 disease classes.
 
