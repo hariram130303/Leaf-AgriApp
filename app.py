@@ -1,14 +1,20 @@
 import streamlit as st
 import numpy as np
 import os
+import gdown
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from PIL import Image
 
+
+if not os.path.exists("model.keras"):
+    url = "https://drive.google.com/uc?id=1NxAsKpm9pEjEs_TL8bmsXE7hGD3PSQ5Q"
+    gdown.download(url, "model.keras", quiet=False)
+
 # Caching model load
 @st.cache_resource
 def load_keras_model():
-    return load_model("Model.keras")
+    return load_model("model.keras")
 
 model = load_keras_model()
 
